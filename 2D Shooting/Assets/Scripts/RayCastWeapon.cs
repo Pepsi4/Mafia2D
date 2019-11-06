@@ -28,7 +28,8 @@ public class RayCastWeapon : MonoBehaviour
                 enemy.TakeDamage(damage);
             }
 
-            Instantiate(impactEffect, hitInfo.point, Quaternion.identity);
+            var bullet = Instantiate(impactEffect, hitInfo.point, Quaternion.identity);
+            Destroy(bullet, 2f);
 
             lineRenderer.SetPosition(0, firePoint.position);
             lineRenderer.SetPosition(1, hitInfo.point);

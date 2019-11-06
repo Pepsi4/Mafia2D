@@ -4,15 +4,75 @@ using UnityEngine;
 
 public class Enemy : MonoBehaviour
 {
+    public enum EnemyState
+    {
+        Searching = 0,
+        Attacking = 1
+    }
+
+    #region variables
     public RayCastWeapon RayCastWeapon;
     public int health = 100;
     [SerializeField] private string _enemyDiesAnimationName = "EnemyDies";
 
+    public EnemyState EnemyStateCurrent;
+
     public Animation deathEffect;
+    public GameObject Player;
+    #endregion
 
     private void Start()
     {
         Shoot();
+
+        GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezePositionX | RigidbodyConstraints2D.FreezePositionY;
+    }
+
+    void Update()
+    {
+        if (Seek())
+        {
+            FlipToTarget(Player);
+        }
+    }
+
+
+    private bool Seek()
+    {
+        if ((transform.position - Player.transform.position).magnitude < 5.0f)
+        {
+            Debug.Log("near");
+            return true;
+        }
+        return false;
+    }
+
+    private void FlipToTarget(GameObject gameObject)
+    {
+        if (Player.transform.position.x > transform.position.x)
+        {
+            //face right
+
+            FlipToRight();
+            //transform.localScale = new Vector3(1, 1, 1);
+        }
+        else if (Player.transform.position.x < transform.position.x)
+        {
+
+            FlipToLeft();
+            //face left
+            //transform.localScale = new Vector3(-1, 1, 1);
+        }
+    }
+
+    void FlipToLeft()
+    {
+        transform.rotation = new Quaternion(0, 180, 0, 0);
+    }
+
+    void FlipToRight()
+    {
+        transform.rotation = new Quaternion(0, 0, 0, 0);
     }
 
     public void TakeDamage(int damage)
