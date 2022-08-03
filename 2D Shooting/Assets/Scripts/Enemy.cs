@@ -16,6 +16,9 @@ public class Enemy : MonoBehaviour
     [SerializeField] private string _enemyDiesAnimationName = "EnemyDies";
 
     public EnemyState EnemyStateCurrent;
+    public ScoreController scoreController;
+
+    private bool isShooting = false;
 
     public Animation deathEffect;
     public GameObject Player;
@@ -23,23 +26,35 @@ public class Enemy : MonoBehaviour
 
     private void Start()
     {
-        Shoot();
-
         GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezePositionX | RigidbodyConstraints2D.FreezePositionY;
     }
 
     void Update()
     {
-        if (Seek())
+        if (isDying == false)
         {
-            FlipToTarget(Player);
+            if (Seek())
+            {
+                FlipToTarget(Player);
+                if (isShooting == false)
+                {
+                    Shoot();
+                    isShooting = true;
+                }
+            }
+            else
+            {
+                isShooting = false;
+                try { StopCoroutine(shootingCoroutine); }
+                catch (System.NullReferenceException ex) { }
+            }
         }
     }
 
 
     private bool Seek()
     {
-        if ((transform.position - Player.transform.position).magnitude < 5.0f)
+        if ((transform.position - Player.transform.position).magnitude < 6.7f)
         {
             Debug.Log("near");
             return true;
@@ -51,17 +66,11 @@ public class Enemy : MonoBehaviour
     {
         if (Player.transform.position.x > transform.position.x)
         {
-            //face right
-
             FlipToRight();
-            //transform.localScale = new Vector3(1, 1, 1);
         }
         else if (Player.transform.position.x < transform.position.x)
         {
-
             FlipToLeft();
-            //face left
-            //transform.localScale = new Vector3(-1, 1, 1);
         }
     }
 
@@ -85,15 +94,25 @@ public class Enemy : MonoBehaviour
         }
     }
 
+
+    private int scorePrice = 25;
     Animator anim;
+    bool isDying = false;
     void Die()
     {
-        anim = GetComponent<Animator>();
-        anim.SetBool("Dying", true);
-        //Instantiate(deathEffect, transform.position, Quaternion.identity);
-        RayCastWeapon.enabled = false;
-        GetAnimPlayTime();
-        Destroy(gameObject, _playTime);
+        if (isDying == false)
+        {
+            isDying = true;
+            anim = GetComponent<Animator>();
+            anim.SetBool("Dying", true);
+            //Instantiate(deathEffect, transform.position, Quaternion.identity);
+            RayCastWeapon.enabled = false;
+            GetAnimPlayTime();
+            scoreController.Score += scorePrice;
+            scoreController.UpdateScoreUI();
+            Destroy(gameObject, _playTime);
+        }
+
     }
 
     float _playTime;
@@ -106,15 +125,22 @@ public class Enemy : MonoBehaviour
         }
     }
 
+    private IEnumerator shootingCoroutine;
+
     void Shoot()
     {
-        StartCoroutine(StartShooting());
+        shootingCoroutine = StartShooting();
+        StartCoroutine(shootingCoroutine);
     }
 
     IEnumerator StartShooting()
     {
         RayCastWeapon.Shoot();
-        yield return new WaitForSeconds(1f);
-        Shoot();
+        yield return new WaitForSeconds(2f);
+        if (isShooting)
+        {
+            Debug.Log("Shoot!");
+            Shoot();
+        }
     }
 }
